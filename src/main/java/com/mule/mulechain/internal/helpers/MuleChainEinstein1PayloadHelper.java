@@ -63,7 +63,7 @@ public class MuleChainEinstein1PayloadHelper {
 
 
     public static String getAccessToken(String org, String consumerKey, String consumerSecret) {
-    String urlString = "https://" + org + ".my.salesforce.com/services/oauth2/token";
+    String urlString = "https://" + org + "/services/oauth2/token";
     String params = "grant_type=client_credentials&client_id=" + consumerKey + "&client_secret=" + consumerSecret;
 
     try {
