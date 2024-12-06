@@ -8,14 +8,14 @@ import org.mule.runtime.extension.api.annotation.param.Parameter;
 import org.mule.runtime.extension.api.annotation.param.display.DisplayName;
 import org.mule.runtime.extension.api.annotation.values.OfValues;
 
-import static com.mule.einstein.internal.helpers.ConstantUtil.OPENAI_GPT_3_5_TURBO;
+import static com.mule.einstein.internal.helpers.ConstantUtil.MODELAPI_OPENAI_GPT_3_5_TURBO;
 
 public class ParamsModelDetails {
 
   @Parameter
   @Expression(ExpressionSupport.SUPPORTED)
   @OfValues(ModelApiNameProvider.class)
-  @Optional(defaultValue = OPENAI_GPT_3_5_TURBO)
+  @Optional(defaultValue = MODELAPI_OPENAI_GPT_3_5_TURBO)
   @DisplayName("Model API Name")
   private String modelApiName;
 

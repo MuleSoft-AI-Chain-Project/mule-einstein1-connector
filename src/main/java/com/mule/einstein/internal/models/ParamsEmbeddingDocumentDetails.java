@@ -1,6 +1,7 @@
-package com.mule.einstein.internal.helpers.documents;
+package com.mule.einstein.internal.models;
 
-import com.mule.einstein.internal.models.provider.EmbeddingModelApiNameProvider;
+import com.mule.einstein.internal.helpers.documents.DocumentFileType;
+import com.mule.einstein.internal.helpers.documents.DocumentSplitOptions;
 import org.mule.runtime.api.meta.ExpressionSupport;
 import org.mule.runtime.extension.api.annotation.Expression;
 import org.mule.runtime.extension.api.annotation.param.Optional;
@@ -8,16 +9,7 @@ import org.mule.runtime.extension.api.annotation.param.Parameter;
 import org.mule.runtime.extension.api.annotation.param.display.DisplayName;
 import org.mule.runtime.extension.api.annotation.values.OfValues;
 
-import static com.mule.einstein.internal.helpers.ConstantUtil.OPENAI_ADA_002;
-
-public class ParametersEmbeddingDocument {
-
-  @Parameter
-  @Expression(ExpressionSupport.SUPPORTED)
-  @OfValues(EmbeddingModelApiNameProvider.class)
-  @Optional(defaultValue = OPENAI_ADA_002)
-  @DisplayName("Model API Name")
-  private String modelApiName;
+public class ParamsEmbeddingDocumentDetails extends ParamsEmbeddingModelDetails {
 
   @Parameter
   @Expression(ExpressionSupport.SUPPORTED)
@@ -32,10 +24,6 @@ public class ParametersEmbeddingDocument {
   @Optional(defaultValue = "FULL")
   @DisplayName("Option Type")
   private String optionType;
-
-  public String getModelApiName() {
-    return modelApiName;
-  }
 
   public String getFileType() {
     return fileType;

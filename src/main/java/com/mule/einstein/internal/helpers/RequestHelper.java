@@ -97,8 +97,8 @@ public class RequestHelper {
 
   private static void populateConnectionObject(HttpURLConnection conn, String accessToken) throws IOException {
     conn.setRequestProperty(AUTHORIZATION, "Bearer " + accessToken);
-    conn.setRequestProperty(X_SFDC_APP_CONTEXT, EINSTEIN_GPT);
-    conn.setRequestProperty(X_CLIENT_FEATURE_ID, AI_PLATFORM_MODELS_CONNECTED_APP);
+    conn.setRequestProperty(REQUEST_PROPERTY_X_SFDC_APP_CONTEXT, APP_CONTEXT_EINSTEIN_GPT);
+    conn.setRequestProperty(REQUEST_PROPERTY_X_CLIENT_FEATURE_ID, FEATURE_AI_PLATFORM_MODELS_CONNECTED_APP);
     conn.setRequestProperty(ConstantUtil.CONTENT_TYPE_STRING, CONTENT_TYPE_APPLICATION_JSON);
   }
 
