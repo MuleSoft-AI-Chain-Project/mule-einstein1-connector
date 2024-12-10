@@ -12,15 +12,15 @@ import org.mule.runtime.extension.api.annotation.values.OfValues;
 import com.mule.einstein.internal.helpers.documents.DocumentFileType;
 import com.mule.einstein.internal.helpers.documents.DocumentSplitOptions;
 
-import static com.mule.einstein.internal.helpers.ConstantUtil.OPENAI_ADA_002;
-import static com.mule.einstein.internal.helpers.ConstantUtil.OPENAI_GPT_3_5_TURBO;
+import static com.mule.einstein.internal.helpers.ConstantUtil.MODELAPI_OPENAI_ADA_002;
+import static com.mule.einstein.internal.helpers.ConstantUtil.MODELAPI_OPENAI_GPT_3_5_TURBO;
 
 public class RAGParamsModelDetails {
 
   @Parameter
   @Expression(ExpressionSupport.SUPPORTED)
   @OfValues(EmbeddingModelApiNameProvider.class)
-  @Optional(defaultValue = OPENAI_ADA_002)
+  @Optional(defaultValue = MODELAPI_OPENAI_ADA_002)
   @DisplayName("Embedding Name")
   private String embeddingName;
 
@@ -41,7 +41,7 @@ public class RAGParamsModelDetails {
   @Parameter
   @Expression(ExpressionSupport.SUPPORTED)
   @OfValues(ModelApiNameProvider.class)
-  @Optional(defaultValue = OPENAI_GPT_3_5_TURBO)
+  @Optional(defaultValue = MODELAPI_OPENAI_GPT_3_5_TURBO)
   @DisplayName("Model API Name")
   private String modelApiName;
 

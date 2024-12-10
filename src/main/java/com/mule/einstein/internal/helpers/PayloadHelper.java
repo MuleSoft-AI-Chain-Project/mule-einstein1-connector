@@ -1,6 +1,8 @@
 package com.mule.einstein.internal.helpers;
 
 import com.mule.einstein.internal.connection.EinsteinConnection;
+import com.mule.einstein.internal.models.ParamsEmbeddingDocumentDetails;
+import com.mule.einstein.internal.models.ParamsEmbeddingModelDetails;
 import com.mule.einstein.internal.models.ParamsModelDetails;
 import com.mule.einstein.internal.models.RAGParamsModelDetails;
 import org.apache.tika.exception.TikaException;
@@ -54,6 +56,27 @@ public class PayloadHelper {
     return executeEinsteinRequest(accessToken, payload, paramDetails.getModelApiName(), URI_MODELS_API_CHAT_GENERATIONS);
   }
 
+  public static String executeGenerateEmbedding(String text, EinsteinConnection connection,
+                                                ParamsEmbeddingModelDetails paramDetails) {
+    String accessToken =
+        RequestHelper.getAccessToken(connection.getSalesforceOrg(), connection.getClientId(), connection.getClientSecret());
+    String payload = constructEmbeddingJSON(text);
+    return executeEinsteinRequest(accessToken, payload, paramDetails.getModelApiName(), URI_MODELS_API_EMBEDDINGS);
+  }
+
+  public static String embeddingFromFile(String filePath, EinsteinConnection connection,
+                                         ParamsEmbeddingDocumentDetails einsteinParameters)
+      throws IOException, SAXException, TikaException {
+
+    String accessToken =
+        RequestHelper.getAccessToken(connection.getSalesforceOrg(), connection.getClientId(), connection.getClientSecret());
+    List<String> corpus = createCorpusList(filePath, einsteinParameters.getFileType(), einsteinParameters.getOptionType());
+
+    return new JSONArray(
+                         getCorpusEmbeddings(einsteinParameters.getModelApiName(), corpus, accessToken))
+                             .toString();
+  }
+
   public static String executeRAG(String text, EinsteinConnection connection, RAGParamsModelDetails paramDetails) {
     String accessToken =
         RequestHelper.getAccessToken(connection.getSalesforceOrg(), connection.getClientId(), connection.getClientSecret());
@@ -75,12 +98,11 @@ public class PayloadHelper {
     String response =
         executeEinsteinRequest(accessToken, payloadOptional, paramDetails.getModelApiName(), URI_MODELS_API_GENERATIONS);
     List<String> findURL = extractUrls(intermediateAnswer);
-    String ePayload = "";
     if (findURL != null) {
       JSONObject jsonObject = new JSONObject(intermediateAnswer);
       String generatedText = jsonObject.getJSONObject("generation").getString("generatedText");
 
-      ePayload = buildPayload(generatedText);
+      String ePayload = buildPayload(generatedText);
 
       response = getAttributes(findURL.get(0), filePath, extractPayload(ePayload));
       String finalPayload = constructJsonPayload("data: " + response + ", question: " + originalPrompt, paramDetails.getLocale(),
@@ -104,34 +126,11 @@ public class PayloadHelper {
         RequestHelper.getAccessToken(connection.getSalesforceOrg(), connection.getClientId(), connection.getClientSecret());
 
     List<String> corpus = createCorpusList(filePath, fileType, optionType);
-
     String body = constructEmbeddingJSON(prompt);
-    String response = executeEinsteinRequest(accessToken, body, modelName, URI_MODELS_API_EMBEDDINGS);
-    JSONObject jsonObject = new JSONObject(response);
-    //Generate embedding for query
-    JSONArray embeddingsArray = jsonObject.getJSONArray("embeddings");
 
-    // Extract the first embedding object
-    JSONObject firstEmbeddingObject = embeddingsArray.getJSONObject(0);
-
-    // Extract the embedding array from the first embedding object
-    JSONArray queryEmbedding = firstEmbeddingObject.getJSONArray("embedding");
-
-    String corpusBody = null;
-    // Generate embeddings for the corpus
-    List<JSONArray> corpusEmbeddings = new ArrayList<>();
-
-    for (String text : corpus) {
-      corpusBody = constructEmbeddingJSON(text);
-      if (text != null && !text.isEmpty()) {
-        response =
-            executeEinsteinRequest(accessToken, constructEmbeddingJSON(corpusBody), modelName, URI_MODELS_API_EMBEDDINGS);
-
-        jsonObject = new JSONObject(response);
-        embeddingsArray = jsonObject.getJSONArray("embeddings");
-        corpusEmbeddings.add(embeddingsArray.getJSONObject(0).getJSONArray("embedding"));
-      }
-    }
+    String embeddingResponse = executeEinsteinRequest(accessToken, body, modelName, URI_MODELS_API_EMBEDDINGS);
+    JSONArray queryEmbedding = getQueryEmbedding(embeddingResponse);
+    List<JSONArray> corpusEmbeddings = getCorpusEmbeddings(modelName, corpus, accessToken);
 
     // Compare embeddings and rank results
     List<Double> similarityScores = new ArrayList<>();
@@ -143,10 +142,43 @@ public class PayloadHelper {
     List<String> results = rankAndPrintResults(corpus, similarityScores);
 
     // Convert results list to a JSONArray
-    JSONArray jsonArray = new JSONArray(results);
+    return new JSONArray(results).toString();
+  }
 
-    return jsonArray.toString();
+  private static List<JSONArray> getCorpusEmbeddings(String modelName, List<String> corpus, String accessToken) {
 
+    String embeddingResponse;
+    JSONArray embeddingsArray;
+    JSONObject jsonObject;
+
+    String corpusBody;
+    // Generate embeddings for the corpus
+    List<JSONArray> corpusEmbeddings = new ArrayList<>();
+
+    for (String text : corpus) {
+      corpusBody = constructEmbeddingJSON(text);
+      if (text != null && !text.isEmpty()) {
+        embeddingResponse =
+            executeEinsteinRequest(accessToken, constructEmbeddingJSON(corpusBody), modelName, URI_MODELS_API_EMBEDDINGS);
+
+        jsonObject = new JSONObject(embeddingResponse);
+        embeddingsArray = jsonObject.getJSONArray(JSON_KEY_EMBEDDINGS);
+        corpusEmbeddings.add(embeddingsArray.getJSONObject(0).getJSONArray(JSON_KEY_EMBEDDING));
+      }
+    }
+    return corpusEmbeddings;
+  }
+
+  private static JSONArray getQueryEmbedding(String embeddingResponse) {
+    JSONObject jsonObject = new JSONObject(embeddingResponse);
+    //Generate embedding for query
+    JSONArray embeddingsArray = jsonObject.getJSONArray(JSON_KEY_EMBEDDINGS);
+
+    // Extract the first embedding object
+    JSONObject firstEmbeddingObject = embeddingsArray.getJSONObject(0);
+
+    // Extract the embedding array from the first embedding object
+    return firstEmbeddingObject.getJSONArray(JSON_KEY_EMBEDDING);
   }
 
   private static List<String> createCorpusList(String filePath, String fileType, String splitOption)
@@ -424,14 +456,12 @@ public class PayloadHelper {
 
     Pattern pattern = Pattern.compile("\\{.*\\}");
     Matcher matcher = pattern.matcher(payload);
-    String response = "";
+    String response;
     if (matcher.find()) {
       response = matcher.group();
     } else {
       response = "Payload not found!";
     }
-
-
     return response;
   }
 

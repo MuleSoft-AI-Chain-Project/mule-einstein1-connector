@@ -3,6 +3,9 @@ package com.mule.einstein.internal.helpers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mule.einstein.api.metadata.EinsteinResponseAttributes;
+import com.mule.einstein.api.metadata.ResponseParameters;
+import com.mule.einstein.api.response.EinsteinEmbeddingsResponse;
+import com.mule.einstein.internal.dto.EinsteinEmbeddingResponseDTO;
 import com.mule.einstein.internal.dto.EinsteinGenerationResponseDTO;
 import org.json.JSONObject;
 import org.mule.runtime.api.metadata.MediaType;
@@ -42,6 +45,19 @@ public class ResponseHelper {
         .build();
   }
 
+  public static Result<EinsteinEmbeddingsResponse, ResponseParameters> createEinsteinEmbeddedResponse(String response)
+      throws JsonProcessingException {
+
+    EinsteinEmbeddingResponseDTO responseDTO = new ObjectMapper().readValue(response, EinsteinEmbeddingResponseDTO.class);
+
+    return Result.<EinsteinEmbeddingsResponse, ResponseParameters>builder()
+        .output(new EinsteinEmbeddingsResponse(responseDTO.getEmbeddings()))
+        .attributes(mapEmbeddingResponseAttributes(responseDTO))
+        .attributesMediaType(MediaType.APPLICATION_JSON)
+        .mediaType(MediaType.APPLICATION_JSON)
+        .build();
+  }
+
   private static EinsteinResponseAttributes mapResponseAttributes(EinsteinGenerationResponseDTO responseDTO) {
 
     return new EinsteinResponseAttributes(
@@ -52,5 +68,14 @@ public class ResponseHelper {
                                           responseDTO.getGeneration() != null ? responseDTO.getGeneration().getParameters()
                                               : null,
                                           responseDTO.getParameters());
+  }
+
+  private static ResponseParameters mapEmbeddingResponseAttributes(EinsteinEmbeddingResponseDTO responseDTO) {
+
+    return new ResponseParameters(
+                                  responseDTO.getParameters() != null ? responseDTO.getParameters().getTokenUsage() : null,
+                                  responseDTO.getParameters() != null ? responseDTO.getParameters().getModel() : null,
+                                  null,
+                                  responseDTO.getParameters() != null ? responseDTO.getParameters().getObject() : null);
   }
 }
