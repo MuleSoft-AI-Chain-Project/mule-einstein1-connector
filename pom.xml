@@ -5,10 +5,37 @@
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.mulesoft.connectors</groupId>
-    <artifactId>mule4-einstein-connector</artifactId>
-    <version>0.2.21-SNAPSHOT</version>
+    <artifactId>mule4-agentforce-connector</artifactId>
+    <version>0.2.29-SNAPSHOT</version>
     <packaging>mule-extension</packaging>
-    <name>Einstein AI Connector</name>
+    <name>Anypoint Agentforce Connector</name>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://www.opensource.org/licenses/mit-license.php</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Amir Khan</name>
+            <email>amir.khan@mulesoft.com</email>
+            <organization>Salesforce</organization>
+            <organizationUrl>https://www.mulesoft.com</organizationUrl>
+        </developer>
+        <developer>
+            <name>Ayush Agarwal</name>
+            <email>ayushagarwal@salesforce.com</email>
+            <organization>Salesforce</organization>
+            <organizationUrl>https://www.mulesoft.com</organizationUrl>
+        </developer>
+        <developer>
+            <name>Vishwas Tyagi</name>
+            <email>vishwas.tyagi@salesforce.com</email>
+            <organization>Salesforce</organization>
+            <organizationUrl>https://www.salesforce.com</organizationUrl>
+        </developer>
+    </developers>
 
     <parent>
         <groupId>org.mule.extensions</groupId>
