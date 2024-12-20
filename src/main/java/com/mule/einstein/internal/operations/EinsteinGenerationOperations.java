@@ -57,7 +57,6 @@ public class EinsteinGenerationOperations {
                                                                                   name = "Additional properties") ParamsModelDetails paramDetails) {
     log.info("Executing agent defined prompt template operation.");
     try {
-
       String finalPromptTemplate = PromptTemplateHelper.definePromptTemplate(template, instructions, dataset);
       String response = payloadHelper.executeGenerateText(finalPromptTemplate, connection, paramDetails);
 
@@ -82,7 +81,6 @@ public class EinsteinGenerationOperations {
                                                                           name = "Additional properties") ParamsModelDetails paramDetails) {
     log.info("Executing chat answer prompt operation.");
     try {
-
       String response = payloadHelper.executeGenerateText(prompt, connection, paramDetails);
 
       return ResponseHelper.createEinsteinFormattedResponse(response);

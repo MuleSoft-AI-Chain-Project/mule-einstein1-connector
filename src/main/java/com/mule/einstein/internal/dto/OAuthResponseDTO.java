@@ -26,4 +26,5 @@ public class OAuthResponseDTO {
   public String getApiInstanceUrl() {
     return apiInstanceUrl;
   }
+
 }

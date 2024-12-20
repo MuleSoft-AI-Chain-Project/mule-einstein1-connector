@@ -1,6 +1,6 @@
 package com.mule.einstein.internal;
 
-import com.mule.einstein.internal.connection.ConnectionProvider;
+import com.mule.einstein.internal.connection.EinsteinConnectionProvider;
 import com.mule.einstein.internal.operations.EinsteinGenerationOperations;
 import com.mule.einstein.internal.operations.EinsteinEmbeddingOperations;
 import com.mule.einstein.internal.error.EinsteinErrorType;
@@ -24,7 +24,7 @@ import static org.mule.sdk.api.meta.JavaVersion.JAVA_8;
 @Extension(name = "Einstein AI")
 @ErrorTypes(EinsteinErrorType.class)
 @Operations({EinsteinEmbeddingOperations.class, EinsteinGenerationOperations.class})
-@ConnectionProviders(ConnectionProvider.class)
+@ConnectionProviders(EinsteinConnectionProvider.class)
 @RequiresEnterpriseLicense(allowEvaluationLicense = true)
 @JavaVersionSupport({JAVA_8, JAVA_11, JAVA_17})
 public class EinsteinConnector {

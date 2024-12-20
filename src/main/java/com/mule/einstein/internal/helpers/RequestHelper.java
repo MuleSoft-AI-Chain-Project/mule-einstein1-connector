@@ -29,56 +29,65 @@ public class RequestHelper {
         + "&" + QUERY_PARAM_CLIENT_SECRET + "=" + clientSecret;
   }
 
-  public static String executeREST(String accessToken, String payload, String urlString) {
 
-    try {
-      HttpURLConnection httpConnection = creteURLConnection(urlString);
-      populateConnectionObject(httpConnection, accessToken);
+  public static String executeREST(String accessToken, String payload, String urlString) throws IOException {
 
-      try (OutputStream os = httpConnection.getOutputStream()) {
-        byte[] input = payload.getBytes(StandardCharsets.UTF_8);
-        os.write(input, 0, input.length);
+    HttpURLConnection httpConnection = creteURLConnection(urlString);
+    populateConnectionObject(httpConnection, accessToken);
+    try (OutputStream os = httpConnection.getOutputStream()) {
+      byte[] input = payload.getBytes(StandardCharsets.UTF_8);
+      os.write(input, 0, input.length);
+    }
+    log.info("Executing rest {} ", urlString);
+    int responseCode = httpConnection.getResponseCode();
+    if (responseCode == HttpURLConnection.HTTP_OK) {
+      if (httpConnection.getInputStream() == null) {
+        return "Error: No response received from Einstein";
       }
-
-      int responseCode = httpConnection.getResponseCode();
-      if (responseCode == HttpURLConnection.HTTP_OK) {
-        if (httpConnection.getInputStream() == null) {
-          return "Error: No response received from Einstein";
-        }
-        return readResponse(httpConnection.getInputStream());
-      } else {
-        String errorMessage = readErrorStream(httpConnection.getErrorStream());
-        log.error("Error response code: {}, message: {}", responseCode, errorMessage);
-        return String.format("Error: %d", responseCode);
-      }
-    } catch (Exception e) {
-      log.error("Exception during REST request execution ", e);
-      return "Exception occurred: " + e.getMessage();
+      return readResponse(httpConnection.getInputStream());
+    } else {
+      String errorMessage = readErrorStream(httpConnection.getErrorStream());
+      log.debug("Error response code: {}, message: {}", responseCode, errorMessage);
+      return String.format("Error: %d", responseCode);
     }
   }
 
-  public static OAuthResponseDTO getAccessToken(String org, String consumerKey, String consumerSecret)
-      throws IOException, ConnectionException {
+  public static OAuthResponseDTO getOAuthResponseDTO(String salesforceOrg, String clientId, String clientSecret)
+      throws IOException {
 
-    String urlString = RequestHelper.getOAuthURL(org);
-    String params = RequestHelper.getOAuthParams(consumerKey, consumerSecret);
+    log.debug("Preparing request for connection for salesforce org:{}", salesforceOrg);
 
+    String urlString = RequestHelper.getOAuthURL(salesforceOrg);
+    String urlParameters = RequestHelper.getOAuthParams(clientId, clientSecret);
     HttpURLConnection httpConnection = creteURLConnection(urlString);
-    httpConnection.setRequestProperty(ConstantUtil.CONTENT_TYPE_STRING, CONTENT_TYPE_X_WWW_FORM_URLENCODED);
 
     try (OutputStream os = httpConnection.getOutputStream()) {
-      byte[] input = params.getBytes(StandardCharsets.UTF_8);
+      byte[] input = urlParameters.getBytes(StandardCharsets.UTF_8);
       os.write(input, 0, input.length);
     }
-
+    log.info("Executing rest {} ", urlString);
     int responseCode = httpConnection.getResponseCode();
+    log.debug("Response code for connection request:{}", responseCode);
     if (responseCode == HttpURLConnection.HTTP_OK) {
+      if (httpConnection.getInputStream() == null) {
+        return null;
+      }
       String response = readResponse(httpConnection.getInputStream());
       return new ObjectMapper().readValue(response, OAuthResponseDTO.class);
-    } else {
-      String errorMessage = readErrorStream(httpConnection.getErrorStream());
-      log.error("Error response code: {}, message: {}", responseCode, errorMessage);
-      throw new ConnectionException("Failed to connect to Salesforce: HTTP " + responseCode);
+    }
+    return null;
+  }
+
+  private static String readResponse(InputStream inputStream) throws IOException {
+    try (java.io.BufferedReader br = new java.io.BufferedReader(
+                                                                new java.io.InputStreamReader(inputStream,
+                                                                                              StandardCharsets.UTF_8))) {
+      StringBuilder response = new StringBuilder();
+      String responseLine;
+      while ((responseLine = br.readLine()) != null) {
+        response.append(responseLine.trim());
+      }
+      return response.toString();
     }
   }
 
@@ -111,21 +120,8 @@ public class RequestHelper {
       }
       return errorResponse.toString();
     } catch (IOException e) {
-      log.error("Error reading error stream", e);
+      log.debug("Error reading error stream", e);
       return "Unable to get response from Einstein. Could not read reading error details as well.";
-    }
-  }
-
-  private static String readResponse(InputStream inputStream) throws IOException {
-    try (java.io.BufferedReader br = new java.io.BufferedReader(
-                                                                new java.io.InputStreamReader(inputStream,
-                                                                                              StandardCharsets.UTF_8))) {
-      StringBuilder response = new StringBuilder();
-      String responseLine;
-      while ((responseLine = br.readLine()) != null) {
-        response.append(responseLine.trim());
-      }
-      return response.toString();
     }
   }
 }

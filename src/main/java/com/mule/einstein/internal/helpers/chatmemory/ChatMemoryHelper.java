@@ -10,6 +10,25 @@ import java.util.List;
 
 public class ChatMemoryHelper {
 
+  public String chatWithMemory(String prompt, String memoryPath, String memoryName, Integer keepLastMessages,
+                               EinsteinConnection connection, ParamsModelDetails parameters, PayloadHelper payloadHelper)
+      throws IOException, ConnectionException {
+
+    //Chat memory initialization
+    ChatMemory chatMemory = intializeChatMemory(memoryPath, memoryName);
+
+    //Get keepLastMessages
+    List<String> keepLastMessagesList = getKeepLastMessage(chatMemory, keepLastMessages);
+    keepLastMessagesList.add(prompt);
+    String memoryPrompt = formatMemoryPrompt(keepLastMessagesList);
+
+    String response = payloadHelper.executeGenerateText(memoryPrompt, connection, parameters);
+
+    addMessageToMemory(chatMemory, prompt);
+
+    return response;
+  }
+
   private ChatMemory intializeChatMemory(String memoryPath, String memoryName) {
     return new ChatMemory(memoryPath, memoryName);
   }
@@ -54,24 +73,5 @@ public class ChatMemoryHelper {
       formattedPrompt.append(message).append("\n");
     }
     return formattedPrompt.toString().trim();
-  }
-
-  public String chatWithMemory(String prompt, String memoryPath, String memoryName, Integer keepLastMessages,
-                               EinsteinConnection connection, ParamsModelDetails parameters, PayloadHelper payloadHelper)
-      throws IOException, ConnectionException {
-
-    //Chat memory initialization
-    ChatMemory chatMemory = intializeChatMemory(memoryPath, memoryName);
-
-    //Get keepLastMessages
-    List<String> keepLastMessagesList = getKeepLastMessage(chatMemory, keepLastMessages);
-    keepLastMessagesList.add(prompt);
-    String memoryPrompt = formatMemoryPrompt(keepLastMessagesList);
-
-    String response = payloadHelper.executeGenerateText(memoryPrompt, connection, parameters);
-
-    addMessageToMemory(chatMemory, prompt);
-
-    return response;
   }
 }

@@ -1,6 +1,5 @@
 package com.mule.einstein.internal.helpers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mule.einstein.internal.connection.EinsteinConnection;
 import com.mule.einstein.internal.dto.EinsteinEmbeddingResponseDTO;
@@ -19,7 +18,6 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.mule.runtime.api.connection.ConnectionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -51,50 +49,48 @@ public class PayloadHelper {
   private static final Logger log = LoggerFactory.getLogger(PayloadHelper.class);
 
   public String executeGenerateText(String prompt, EinsteinConnection connection, ParamsModelDetails paramDetails)
-      throws IOException, ConnectionException {
-    OAuthResponseDTO accessTokeDTO = getOAuthResponseDTO(connection);
+      throws IOException {
     String payload = constructJsonPayload(prompt, paramDetails.getLocale(), paramDetails.getProbability());
+    OAuthResponseDTO accessTokeDTO = connection.getoAuthResponseDTO();
     return executeEinsteinRequest(accessTokeDTO, payload, paramDetails.getModelApiName(), URI_MODELS_API_GENERATIONS);
   }
 
   public String executeGenerateChat(String messages, EinsteinConnection connection, ParamsModelDetails paramDetails)
-      throws IOException, ConnectionException {
-    OAuthResponseDTO accessTokeDTO = getOAuthResponseDTO(connection);
+      throws IOException {
     String payload = constrcutJsonMessages(messages, paramDetails);
+    OAuthResponseDTO accessTokeDTO = connection.getoAuthResponseDTO();
     return executeEinsteinRequest(accessTokeDTO, payload, paramDetails.getModelApiName(), URI_MODELS_API_CHAT_GENERATIONS);
   }
 
   public String executeGenerateEmbedding(String text, EinsteinConnection connection,
                                          ParamsEmbeddingModelDetails paramDetails)
-      throws IOException, ConnectionException {
-    OAuthResponseDTO accessTokeDTO = getOAuthResponseDTO(connection);
+      throws IOException {
     String payload = constructEmbeddingJSON(text);
+    OAuthResponseDTO accessTokeDTO = connection.getoAuthResponseDTO();
     return executeEinsteinRequest(accessTokeDTO, payload, paramDetails.getModelApiName(), URI_MODELS_API_EMBEDDINGS);
   }
 
   public JSONArray embeddingFromFile(String filePath, EinsteinConnection connection,
                                      ParamsEmbeddingDocumentDetails einsteinParameters)
-      throws IOException, SAXException, TikaException, ConnectionException {
+      throws IOException, SAXException, TikaException {
 
-    OAuthResponseDTO accessTokeDTO = getOAuthResponseDTO(connection);
     List<String> corpus = createCorpusList(filePath, einsteinParameters.getFileType(), einsteinParameters.getOptionType());
-
+    OAuthResponseDTO accessTokeDTO = connection.getoAuthResponseDTO();
     return new JSONArray(
                          getCorpusEmbeddings(einsteinParameters.getModelApiName(), corpus, accessTokeDTO));
   }
 
-  public String executeRAG(String text, EinsteinConnection connection, RAGParamsModelDetails paramDetails)
-      throws IOException, ConnectionException {
-    OAuthResponseDTO accessTokeDTO = getOAuthResponseDTO(connection);
+  public String executeRAG(String text, EinsteinConnection connection, RAGParamsModelDetails paramDetails) throws IOException {
     String payload = constructJsonPayload(text, paramDetails.getLocale(), paramDetails.getProbability());
+    OAuthResponseDTO accessTokeDTO = connection.getoAuthResponseDTO();
     return executeEinsteinRequest(accessTokeDTO, payload, paramDetails.getModelApiName(), URI_MODELS_API_GENERATIONS);
   }
 
   public String executeTools(String originalPrompt, String prompt, String filePath, EinsteinConnection connection,
                              ParamsModelDetails paramDetails)
-      throws IOException, ConnectionException {
-    OAuthResponseDTO accessTokeDTO = getOAuthResponseDTO(connection);
+      throws IOException {
     String payload = constructJsonPayload(prompt, paramDetails.getLocale(), paramDetails.getProbability());
+    OAuthResponseDTO accessTokeDTO = connection.getoAuthResponseDTO();
     String payloadOptional = constructJsonPayload(originalPrompt, paramDetails.getLocale(), paramDetails.getProbability());
 
     String intermediateAnswer =
@@ -120,13 +116,10 @@ public class PayloadHelper {
 
   public JSONArray embeddingFileQuery(String prompt, String filePath, EinsteinConnection connection, String modelName,
                                       String fileType, String optionType)
-      throws IOException, SAXException, TikaException, ConnectionException {
-
-    OAuthResponseDTO accessTokeDTO = getOAuthResponseDTO(connection);
-
+      throws IOException, SAXException, TikaException {
     List<String> corpus = createCorpusList(filePath, fileType, optionType);
     String body = constructEmbeddingJSON(prompt);
-
+    OAuthResponseDTO accessTokeDTO = connection.getoAuthResponseDTO();
     List<Double> embeddingList = getQueryEmbedding(accessTokeDTO, body, modelName);
 
     List<List<Double>> corpusEmbeddingList = getCorpusEmbeddings(modelName, corpus, accessTokeDTO);
@@ -143,12 +136,8 @@ public class PayloadHelper {
     return new JSONArray(results);
   }
 
-  private OAuthResponseDTO getOAuthResponseDTO(EinsteinConnection connection) throws IOException, ConnectionException {
-    return RequestHelper.getAccessToken(connection.getSalesforceOrg(), connection.getClientId(), connection.getClientSecret());
-  }
-
   private List<List<Double>> getCorpusEmbeddings(String modelName, List<String> corpus, OAuthResponseDTO accessTokeDTO)
-      throws JsonProcessingException {
+      throws IOException {
 
     String embeddingResponse;
     String corpusBody;
@@ -173,7 +162,7 @@ public class PayloadHelper {
   }
 
   private List<Double> getQueryEmbedding(OAuthResponseDTO accessTokeDTO, String body, String modelName)
-      throws JsonProcessingException {
+      throws IOException {
 
     String embeddingResponse = executeEinsteinRequest(accessTokeDTO, body, modelName, URI_MODELS_API_EMBEDDINGS);
 
@@ -228,7 +217,8 @@ public class PayloadHelper {
   }
 
   private String executeEinsteinRequest(OAuthResponseDTO accessTokenDTO, String payload, String modelName,
-                                        String resource) {
+                                        String resource)
+      throws IOException {
 
     String urlString = accessTokenDTO.getApiInstanceUrl() + URI_MODELS_API + modelName + resource;
     log.debug("Einstein Request URL: {}", urlString);
