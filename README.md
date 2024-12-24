@@ -1,4 +1,4 @@
-# Mule4 Agentforce Connector
+# Mule4 Anypoint Agentforce Connector
 
 ## <img src="icon/icon.svg" width="6%" alt="banner"> [MuleSoft AI Chain - Anypoint Agentforce Connector](https://mac-project.ai/docs/einstein-ai)
 

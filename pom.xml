@@ -204,7 +204,7 @@
                 <configuration>
                     <argLines>
                         <argLine>
-                            -javaagent:${settings.localRepository}/org/jacoco/org.jacoco.agent/${jacoco.version}/org.jacoco.agent-${jacoco.version}-runtime.jar=destfile=${session.executionRootDirectory}/target/jacoco.exec,includes=org/mule/extension/einstein/**
+                            -javaagent:${settings.localRepository}/org/jacoco/org.jacoco.agent/${jacoco.version}/org.jacoco.agent-${jacoco.version}-runtime.jar=destfile=${session.executionRootDirectory}/target/jacoco.exec,includes=com/mulesoft/connector/agentforce/**
                         </argLine>
                     </argLines>
                     <sharedLibraries>

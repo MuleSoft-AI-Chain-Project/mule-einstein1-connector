@@ -2,33 +2,33 @@
 
 <mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
       xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-      xmlns:ms-einstein="http://www.mulesoft.org/schema/mule/ms-einstein"
+      xmlns:ms-agentforce="http://www.mulesoft.org/schema/mule/ms-agentforce"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
-  http://www.mulesoft.org/schema/mule/ms-einstein http://www.mulesoft.org/schema/mule/ms-einstein/current/mule-ms-einstein.xsd">
+  http://www.mulesoft.org/schema/mule/ms-agentforce http://www.mulesoft.org/schema/mule/ms-agentforce/current/mule-ms-agentforce.xsd">
 
     <flow name="populate-memory-flow">
         <set-variable variableName="prompt" value="Ostrich is the biggest bird in the world." doc:name="Set Prompt Variable" />
-        <ms-einstein:chat-answer-prompt-with-memory
+        <ms-agentforce:chat-answer-prompt-with-memory
                 doc:name="CHAT Answer Prompt With Memory"
                 memoryPath='${app.home}/embeddingaddfiletest/testdb'
                 memoryName="vt"
                 keepLastMessages="10"
-                config-ref="Einstein_AI_Config">
-            <ms-einstein:prompt>#[vars.prompt]</ms-einstein:prompt>
-        </ms-einstein:chat-answer-prompt-with-memory>
+                config-ref="Agentforce_Config">
+            <ms-agentforce:prompt>#[vars.prompt]</ms-agentforce:prompt>
+        </ms-agentforce:chat-answer-prompt-with-memory>
     </flow>
 
     <flow name="ask-question-flow">
         <flow-ref name="populate-memory-flow" doc:name="Call Populate Memory Flow"/>
         <set-variable variableName="prompt" value="Which is the biggest bird in the world?" doc:name="Set Prompt Variable"/>
-        <ms-einstein:chat-answer-prompt-with-memory
+        <ms-agentforce:chat-answer-prompt-with-memory
                 doc:name="CHAT Answer Prompt With Memory"
                 memoryPath='${app.home}/embeddingaddfiletest/testdb'
                 memoryName="vt"
                 keepLastMessages="10"
-                config-ref="Einstein_AI_Config">
-            <ms-einstein:prompt>#[vars.prompt]</ms-einstein:prompt>
-        </ms-einstein:chat-answer-prompt-with-memory>
+                config-ref="Agentforce_Config">
+            <ms-agentforce:prompt>#[vars.prompt]</ms-agentforce:prompt>
+        </ms-agentforce:chat-answer-prompt-with-memory>
     </flow>
 </mule>
