@@ -12,11 +12,18 @@ public class OAuthResponseDTO {
 
   private final String accessToken;
   private final String apiInstanceUrl;
+  private String xorgId;
 
   @ConstructorProperties({"accessToken", "apiInstanceUrl"})
   public OAuthResponseDTO(String accessToken, String apiInstanceUrl) {
     this.accessToken = accessToken;
     this.apiInstanceUrl = apiInstanceUrl;
+  }
+
+  public OAuthResponseDTO(String accessToken, String apiInstanceUrl, String xorgId) {
+    this.accessToken = accessToken;
+    this.apiInstanceUrl = apiInstanceUrl;
+    this.xorgId = xorgId;
   }
 
   public String getAccessToken() {
@@ -27,4 +34,7 @@ public class OAuthResponseDTO {
     return apiInstanceUrl;
   }
 
+  public String getXorgId() {
+    return xorgId;
+  }
 }

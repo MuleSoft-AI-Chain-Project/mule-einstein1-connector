@@ -1,6 +1,7 @@
 package com.mulesoft.connector.agentforce.internal;
 
 import com.mulesoft.connector.agentforce.internal.connection.AgentforceConnectionProvider;
+import com.mulesoft.connector.agentforce.internal.operations.AgentforceCopilotAgentOperations;
 import com.mulesoft.connector.agentforce.internal.operations.AgentforceGenerationOperations;
 import com.mulesoft.connector.agentforce.internal.operations.AgentforceEmbeddingOperations;
 import com.mulesoft.connector.agentforce.internal.error.AgentforceErrorType;
@@ -23,7 +24,7 @@ import static org.mule.sdk.api.meta.JavaVersion.JAVA_8;
 @Xml(prefix = "ms-agentforce")
 @Extension(name = "Anypoint Agentforce")
 @ErrorTypes(AgentforceErrorType.class)
-@Operations({AgentforceEmbeddingOperations.class, AgentforceGenerationOperations.class})
+@Operations({AgentforceEmbeddingOperations.class, AgentforceGenerationOperations.class, AgentforceCopilotAgentOperations.class})
 @ConnectionProviders(AgentforceConnectionProvider.class)
 @RequiresEnterpriseLicense(allowEvaluationLicense = true)
 @JavaVersionSupport({JAVA_8, JAVA_11, JAVA_17})

@@ -2,7 +2,9 @@ package com.mulesoft.connector.agentforce.internal.helpers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mulesoft.connector.agentforce.internal.connection.AgentforceConnection;
+import com.mulesoft.connector.agentforce.internal.dto.AgentMetadataResponse;
 import com.mulesoft.connector.agentforce.internal.dto.AgentforceEmbeddingResponseDTO;
+import com.mulesoft.connector.agentforce.internal.dto.BotRecord;
 import com.mulesoft.connector.agentforce.internal.dto.OAuthResponseDTO;
 import com.mulesoft.connector.agentforce.internal.models.ParamsEmbeddingDocumentDetails;
 import com.mulesoft.connector.agentforce.internal.models.ParamsEmbeddingModelDetails;
@@ -32,10 +34,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -45,7 +44,7 @@ import static com.mulesoft.connector.agentforce.internal.helpers.ConstantUtil.UR
 import static com.mulesoft.connector.agentforce.internal.helpers.ConstantUtil.URI_MODELS_API_CHAT_GENERATIONS;
 import static com.mulesoft.connector.agentforce.internal.helpers.ConstantUtil.URI_MODELS_API_EMBEDDINGS;
 import static com.mulesoft.connector.agentforce.internal.helpers.ConstantUtil.URI_MODELS_API_GENERATIONS;
-import static com.mulesoft.connector.agentforce.internal.helpers.RequestHelper.executeREST;
+import static com.mulesoft.connector.agentforce.internal.helpers.RequestHelper.*;
 
 public class PayloadHelper {
 
@@ -139,6 +138,79 @@ public class PayloadHelper {
 
     // Convert results list to a JSONArray
     return new JSONArray(results);
+  }
+
+  public String startSession(String agentId, AgentforceConnection agentforceConnection) throws IOException {
+    String externalSessionKey = UUID.randomUUID().toString();
+    String forceConfigEndpoint = ConstantUtil.URI_HTTPS_PREFIX + agentforceConnection.getSalesforceOrg();
+    String payload = constructJsonPayloadForAgentStartSession(externalSessionKey, forceConfigEndpoint);
+
+    String response = executeAgentforceCopilotStartSession(agentforceConnection.getoAuthResponseDTO(),
+                                                           payload, agentId, "sessions");
+    System.out.println("response = " + response);
+    return response;
+  }
+
+  public Map<String, String> getAgentMetadata(AgentforceConnection agentforceConnection) throws IOException {
+    String url = ConstantUtil.URI_HTTPS_PREFIX + agentforceConnection.getSalesforceOrg()
+        + "/services/data/v62.0/query?q=select%20Status%2CBotDefinition.MasterLabel%20from%20BotVersion";
+    System.out.println("URL= " + url);
+    String jsonResponse = getAgentList(agentforceConnection.getoAuthResponseDTO().getAccessToken(), url);
+    System.out.println("jsonResponse= " + jsonResponse);
+    ObjectMapper objectMapper = new ObjectMapper();
+    AgentMetadataResponse agentMetadataResponse = objectMapper.readValue(jsonResponse, AgentMetadataResponse.class);
+    Map<String, String> map = new HashMap<>();
+    for (BotRecord botRecord : agentMetadataResponse.getRecords()) {
+      if (botRecord.getStatus().equals("Active")) {
+        String botUrl = botRecord.getBotDefinition().getAttributes().getUrl();
+        System.out.println("botUrl = " + botUrl);
+        String[] parts = botUrl.split("/");
+        String botId = parts[parts.length - 1];
+        System.out.println("Extracted ID: " + botId);
+        String botName = botRecord.getBotDefinition().getMasterLabel();
+        map.put(botName, botId);
+      }
+    }
+    return map;
+  }
+
+  public String continueSession(String body, String sessionId, AgentforceConnection agentforceConnection) throws IOException {
+    String url = constructUrlPayloadForAgentContinueSession(body, sessionId);
+    String xorgId = agentforceConnection.getoAuthResponseDTO().getXorgId();
+    xorgId = "00DdL00000DEu66UAD";
+    String response = executeContinueSession(agentforceConnection.getoAuthResponseDTO().getAccessToken(),
+                                             body, xorgId, url);
+    System.out.println("response = " + response);
+    return response;
+  }
+
+  public String endSession(String sessionId, AgentforceConnection agentforceConnection) throws IOException {
+    String url = "https://runtime-api-na-west.prod.chatbots.sfdc.sh/v5.1.0/sessions/" + sessionId;
+    System.out.println("url = " + url);
+    String xorgId = agentforceConnection.getoAuthResponseDTO().getXorgId();
+    xorgId = "00DdL00000DEu66UAD";
+    String response =
+        executeEndSession(agentforceConnection.getoAuthResponseDTO().getAccessToken(), xorgId, url);
+    System.out.println("response = " + response);
+    return response;
+  }
+
+  private String constructUrlPayloadForAgentContinueSession(String body, String sessionId) {
+    String urlString = "https://runtime-api-na-west.prod.chatbots.sfdc.sh/v5.1.0/sessions/" + sessionId + "/messages";
+    log.debug("Agentforce Request URL: {}", urlString);
+    System.out.println("urlString = " + urlString);
+    return urlString;
+  }
+
+  private String executeAgentforceCopilotStartSession(OAuthResponseDTO accessTokenDTO, String payload, String agentId,
+                                                      String sessions)
+      throws IOException {
+    String urlString = "https://runtime-api-na-west.prod.chatbots.sfdc.sh/v5.1.0/bots/" + agentId + "/" + sessions;
+    log.debug("Agentforce Request URL: {}", urlString);
+    System.out.println("urlString = " + urlString);
+    String xorgId = accessTokenDTO.getXorgId();
+    xorgId = "00DdL00000DEu66UAD";
+    return executeStartSession(accessTokenDTO.getAccessToken(), payload, xorgId, urlString);
   }
 
   private List<List<Double>> getCorpusEmbeddings(String modelName, List<String> corpus, OAuthResponseDTO accessTokeDTO)
@@ -362,6 +434,16 @@ public class PayloadHelper {
     jsonPayload.put("tags", new JSONObject());
 
     return jsonPayload.toString();
+  }
+
+  private String constructJsonPayloadForAgentStartSession(String externalSessionKey, String forceConfigEndpoint) {
+    JSONObject body = new JSONObject();
+    body.put("externalSessionKey", externalSessionKey);
+    JSONObject forceConfig = new JSONObject();
+    forceConfig.put("endpoint", forceConfigEndpoint);
+    body.put("forceConfig", forceConfig);
+    System.out.println("Json = " + body.toString());
+    return body.toString();
   }
 
   private String constrcutJsonMessages(String message, ParamsModelDetails paramsModelDetails) {
